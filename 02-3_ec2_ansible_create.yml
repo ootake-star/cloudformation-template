@@ -1,0 +1,77 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: ---
+Parameters:
+#==========================================
+# EC2パラメータ
+#==========================================
+  Ec2ImageId:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+
+  Ec2InstanceType:
+    Type: String
+    Default: t2.micro
+
+  KeyName:
+    Description: The EC2 Key Pair to allow SSH access to the instance
+    Type: "AWS::EC2::KeyPair::KeyName"
+
+  MyIp:
+    Description: IP address allowed to access EC2
+    Type: String
+    Default: 0.0.0.0/32
+
+Resources: 
+#==========================================
+# EC2セキュリティグループの作成
+#==========================================
+  WebServerSg:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      # GroupName: WebServer
+      GroupDescription: http,https
+      VpcId: !ImportValue myVPC
+      SecurityGroupIngress:
+        -
+          IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        -
+          IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+        -
+          IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref MyIp
+      # SecurityGroupEgress:
+      #   - Security Group Rule
+      Tags:
+        - Key: Name
+          Value: WebServerSg
+
+#==========================================
+# EC2インスタンスの作成
+#==========================================
+  WebServer:
+    Type: AWS::EC2::Instance
+    Properties:
+      SubnetId: !ImportValue myVPC-PublicSubnet01a
+      KeyName: !Ref KeyName
+      DisableApiTermination: false
+      ImageId: !Ref Ec2ImageId
+      InstanceType: !Ref Ec2InstanceType
+      SecurityGroupIds:
+        - !Ref WebServerSg
+      UserData: !Base64 |
+        #!/bin/bash -ex
+        sudo yum update -y
+        sudo yum install -y git
+        sudo amazon-linux-extras install -y epel
+        sudo yum install -y ansible
+      Tags:
+        - Key: Name
+          Value: WebServer

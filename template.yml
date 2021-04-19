@@ -1,0 +1,23 @@
+# CloudFormationテンプレートのバージョン
+AWSTemplateFormatVersion: 2010-09-09
+
+# テンプレートの説明文
+Description: ---
+
+# テンプレートに関する追加情報
+Metadata: 
+
+# 実行時にユーザ入力を求めるパラメータ(KeyPairの名前、DBのユーザ名など)
+Parameters: 
+
+# キーと値のマッピング 条件パラメータ値の指定に使用
+Mappings: 
+
+# 条件名と条件判断内容 Resorcesセクションなどでリソース作成時に利用
+Conditions: 
+
+# 必須。EC2やRDSなど、スタックを構成するリソースとプロパティ
+Resources: 
+
+# スタック構築後にCloudFormationから出力させる値(DNS名やEIPの値など)
+Outputs:
