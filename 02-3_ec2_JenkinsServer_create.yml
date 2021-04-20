@@ -1,0 +1,152 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: "Jenkinsサーバ作成スタック"
+Parameters:
+#==========================================
+# EC2パラメータ
+#==========================================
+  Ec2ImageId:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+
+  Ec2InstanceType:
+    Type: String
+    Default: t2.micro
+
+  KeyName:
+    Description: The EC2 Key Pair to allow SSH access to the instance
+    Type: "AWS::EC2::KeyPair::KeyName"
+
+  MyIp:
+    Description: IP address allowed to access EC2
+    Type: String
+    Default: 0.0.0.0/32
+
+Resources: 
+  JenkinsIamRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      Policies:
+        - PolicyName: JenkinsEC2andCloudFormationFullAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: 'ec2:*'
+                Resource: '*'
+              
+              - Effect: Allow
+                Action: 'elasticloadbalancing:*'
+                Resource: '*'
+              
+              - Effect: Allow
+                Action: 'cloudwatch:*'
+                Resource: '*'
+              
+              - Effect: Allow
+                Action: 'autoscaling:*'
+                Resource: '*'
+              
+              - Effect: Allow
+                Action: 'iam:CreateServiceLinkedRole'
+                Resource: '*'
+              
+              - Effect: Allow
+                Action: 'cloudformation:*'
+                Resource: '*'
+
+                Condition:
+                  StringEquals:
+                    iam:AWSServiceName:
+                      - "autoscaling.amazonaws.com"
+                      - "ec2scheduled.amazonaws.com"
+                      - "elasticloadbalancing.amazonaws.com"
+                      - "spot.amazonaws.com"
+                      - "spotfleet.amazonaws.com"
+                      - "transitgateway.amazonaws.com"
+
+  JenkinsInstanceProfile:
+    Type: 'AWS::IAM::InstanceProfile'
+    Properties:
+      Path: /
+      Roles:
+        - !Ref JenkinsIamRole
+
+#==========================================
+# EC2セキュリティグループの作成
+#==========================================
+  JenkinsServerSg:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      # GroupName: WebServer
+      GroupDescription: http,https,ssh,jenkins
+      VpcId: !ImportValue myVPC
+      SecurityGroupIngress:
+        -
+          IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        -
+          IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+        -
+          IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref MyIp
+        -
+          IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          CidrIp: !Ref MyIp
+      # SecurityGroupEgress:  
+      #   - Security Group Rule
+      Tags:
+        - Key: Name
+          Value: JenkinsServerSg
+
+#==========================================
+# EC2インスタンスの作成
+#==========================================
+  JenkinsServer:
+    Type: AWS::EC2::Instance
+    Properties:
+      SubnetId: !ImportValue myVPC-PublicSubnet01a
+      KeyName: !Ref KeyName
+      DisableApiTermination: false
+      ImageId: !Ref Ec2ImageId
+      InstanceType: !Ref Ec2InstanceType
+      SecurityGroupIds:
+        - !Ref JenkinsServerSg
+      IamInstanceProfile: !Ref JenkinsInstanceProfile
+      UserData: !Base64 |
+        #!/bin/bash -ex
+        sudo yum update -y
+        sudo yum install -y git gcc openssl-devel readline-devel zlib-devel
+        sudo amazon-linux-extras install -y epel
+        sudo yum install -y ansible
+        sudo amazon-linux-extras install -y ruby2.6
+        sudo yum install -y ruby-devel
+        sudo gem install io-console
+        sudo gem install rake serverspec
+        sudo yum install -y java-1.8.0-openjdk-devel
+        sudo wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat/jenkins.repo
+        sudo rpm --import https://pkg.jenkins.io/redhat/jenkins.io.key
+        sudo yum install -y jenkins
+        sudo systemctl start jenkins.service
+        sudo systemctl enable jenkins.service
+      Tags:
+        - Key: Name
+          Value: JenkinsServer
