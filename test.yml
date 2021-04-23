@@ -25,11 +25,11 @@ Resources:
 #==========================================
 # EC2セキュリティグループの作成
 #==========================================
-  CiServerSg:
+  WebServerSg:
     Type: AWS::EC2::SecurityGroup
     Properties:
       # GroupName: WebServer
-      GroupDescription: http,https,ssh,jenkins
+      GroupDescription: http,https
       VpcId: !ImportValue myVPC
       SecurityGroupIngress:
         -
@@ -47,21 +47,16 @@ Resources:
           FromPort: 22
           ToPort: 22
           CidrIp: !Ref MyIp
-        -
-          IpProtocol: tcp
-          FromPort: 8080
-          ToPort: 8080
-          CidrIp: !Ref MyIp
-      # SecurityGroupEgress:  
+      # SecurityGroupEgress:
       #   - Security Group Rule
       Tags:
         - Key: Name
-          Value: CiServerSg
+          Value: WebServerSg
 
 #==========================================
 # EC2インスタンスの作成
 #==========================================
-  CiServer:
+  WebServer:
     Type: AWS::EC2::Instance
     Properties:
       SubnetId: !ImportValue myVPC-PublicSubnet01a
@@ -70,18 +65,13 @@ Resources:
       ImageId: !Ref Ec2ImageId
       InstanceType: !Ref Ec2InstanceType
       SecurityGroupIds:
-        - !Ref CiServerSg
+        - !Ref WebServerSg
       UserData: !Base64 |
         #!/bin/bash -ex
-        yum update -y
-        yum install -y git gcc openssl-devel readline-devel zlib-devel
-        amazon-linux-extras install -y epel
-        yum install -y java-1.8.0-openjdk-devel
-        wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat/jenkins.repo
-        rpm --import https://pkg.jenkins.io/redhat/jenkins.io.key
-        yum install -y jenkins
-        systemctl start jenkins.service
-        systemctl enable jenkins.service
+        sudo yum update -y
+        sudo amazon-linux-extras install -y nginx1
+        sudo systemctl start nginx
+        sudo systemctl enable nginx
       Tags:
         - Key: Name
-          Value: CiServer
+          Value: WebServer

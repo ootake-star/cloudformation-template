@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: ---
+Description: "Jenkinsサーバ作成スタック"
 Parameters:
 #==========================================
 # EC2パラメータ
@@ -22,10 +22,68 @@ Parameters:
     Default: 0.0.0.0/32
 
 Resources: 
+  JenkinsIamRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      Policies:
+        - PolicyName: EC2andCloudFormationFullAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: 'ec2:*'
+                Resource: '*'
+              
+              - Effect: Allow
+                Action: 'elasticloadbalancing:*'
+                Resource: '*'
+              
+              - Effect: Allow
+                Action: 'cloudwatch:*'
+                Resource: '*'
+              
+              - Effect: Allow
+                Action: 'autoscaling:*'
+                Resource: '*'
+              
+              - Effect: Allow
+                Action: 'iam:CreateServiceLinkedRole'
+                Resource: '*'
+                Condition:
+                  StringEquals:
+                    iam:AWSServiceName:
+                      - "autoscaling.amazonaws.com"
+                      - "ec2scheduled.amazonaws.com"
+                      - "elasticloadbalancing.amazonaws.com"
+                      - "spot.amazonaws.com"
+                      - "spotfleet.amazonaws.com"
+                      - "transitgateway.amazonaws.com"
+
+              - Effect: Allow
+                Action: 'cloudformation:*'
+                Resource: '*'
+
+  JenkinsInstanceProfile:
+    Type: 'AWS::IAM::InstanceProfile'
+    Properties:
+      Path: /
+      Roles:
+        - !Ref JenkinsIamRole
+
 #==========================================
 # EC2セキュリティグループの作成
 #==========================================
-  CiServerSg:
+  JenkinsServerSg:
     Type: AWS::EC2::SecurityGroup
     Properties:
       # GroupName: WebServer
@@ -56,12 +114,12 @@ Resources:
       #   - Security Group Rule
       Tags:
         - Key: Name
-          Value: CiServerSg
+          Value: JenkinsServerSg
 
 #==========================================
 # EC2インスタンスの作成
 #==========================================
-  CiServer:
+  JenkinsServer:
     Type: AWS::EC2::Instance
     Properties:
       SubnetId: !ImportValue myVPC-PublicSubnet01a
@@ -70,7 +128,8 @@ Resources:
       ImageId: !Ref Ec2ImageId
       InstanceType: !Ref Ec2InstanceType
       SecurityGroupIds:
-        - !Ref CiServerSg
+        - !Ref JenkinsServerSg
+      IamInstanceProfile: !Ref JenkinsInstanceProfile
       UserData: !Base64 |
         #!/bin/bash -ex
         sudo yum update -y
@@ -89,4 +148,4 @@ Resources:
         sudo systemctl enable jenkins.service
       Tags:
         - Key: Name
-          Value: CiServer
+          Value: JenkinsServer
