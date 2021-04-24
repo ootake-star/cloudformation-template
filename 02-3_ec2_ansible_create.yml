@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: ---
+Description: AnsibleServer
 Parameters:
 #==========================================
 # EC2パラメータ
@@ -25,7 +25,7 @@ Resources:
 #==========================================
 # EC2セキュリティグループの作成
 #==========================================
-  WebServerSg:
+  AnsibleServerSg:
     Type: AWS::EC2::SecurityGroup
     Properties:
       # GroupName: WebServer
@@ -51,12 +51,12 @@ Resources:
       #   - Security Group Rule
       Tags:
         - Key: Name
-          Value: WebServerSg
+          Value: AnsibleServerSg
 
 #==========================================
 # EC2インスタンスの作成
 #==========================================
-  WebServer:
+  AnsibleServer:
     Type: AWS::EC2::Instance
     Properties:
       SubnetId: !ImportValue myVPC-PublicSubnet01a
@@ -65,7 +65,7 @@ Resources:
       ImageId: !Ref Ec2ImageId
       InstanceType: !Ref Ec2InstanceType
       SecurityGroupIds:
-        - !Ref WebServerSg
+        - !Ref AnsibleServerSg
       UserData: !Base64 |
         #!/bin/bash -ex
         sudo yum update -y
@@ -74,4 +74,4 @@ Resources:
         sudo yum install -y ansible
       Tags:
         - Key: Name
-          Value: WebServer
+          Value: AnsibleServer
