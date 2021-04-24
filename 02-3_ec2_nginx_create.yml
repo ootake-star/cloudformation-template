@@ -69,6 +69,7 @@ Resources:
       UserData: !Base64 |
         #!/bin/bash -ex
         sudo yum update -y
+        sudo amazon-linux-extras install -y epel
         sudo yum install -y nginx
         sudo systemctl start nginx
         sudo systemctl enable nginx
