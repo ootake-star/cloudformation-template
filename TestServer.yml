@@ -53,16 +53,10 @@ Resources:
         - Key: Name
           Value: TestServerSg
 
-  TestServerEIP:
-    Type: "AWS::EC2::EIP"
-    Properties:
-      Domain: vpc
-    DependsOn: TestServer1a
-
   TestServerEipAssociation:
     Type: AWS::EC2::EIPAssociation
     Properties:
-      EIP: !Ref TestServerEIP
+      EIP: 35.72.240.235
       InstanceId: !Ref TestServer1a
     DependsOn: TestServer1a
 
