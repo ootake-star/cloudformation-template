@@ -1,27 +1,29 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: "Jenkinsサーバ作成スタック"
+Description: "Create JenkinsServer"
 Parameters:
-#==========================================
-# EC2パラメータ
-#==========================================
+# 最新のAmazon Linux 2 AMIを取得
   Ec2ImageId:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
 
+# EC2インスタンスタイプ
   Ec2InstanceType:
     Type: String
-    Default: t2.micro
+    Default: t2.small
 
+# キーペアの選択
   KeyName:
     Description: The EC2 Key Pair to allow SSH access to the instance
     Type: "AWS::EC2::KeyPair::KeyName"
 
+# グローバルIP
   MyIp:
-    Description: IP address allowed to access EC2
+    Description: For EC2 access
     Type: String
     Default: 0.0.0.0/32
 
 Resources: 
+# IAMロールの作成
   JenkinsIamRole:
     Type: 'AWS::IAM::Role'
     Properties:
@@ -73,6 +75,7 @@ Resources:
                 Action: 'cloudformation:*'
                 Resource: '*'
 
+# IAMロール用のインスタンスプロファイルの作成
   JenkinsInstanceProfile:
     Type: 'AWS::IAM::InstanceProfile'
     Properties:
@@ -80,13 +83,10 @@ Resources:
       Roles:
         - !Ref JenkinsIamRole
 
-#==========================================
 # EC2セキュリティグループの作成
-#==========================================
   JenkinsServerSg:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      # GroupName: WebServer
       GroupDescription: http,https,ssh,jenkins
       VpcId: !ImportValue myVPC
       SecurityGroupIngress:
@@ -110,16 +110,12 @@ Resources:
           FromPort: 8080
           ToPort: 8080
           CidrIp: !Ref MyIp
-      # SecurityGroupEgress:  
-      #   - Security Group Rule
       Tags:
         - Key: Name
           Value: JenkinsServerSg
 
-#==========================================
 # EC2インスタンスの作成
-#==========================================
-  JenkinsServer:
+  JenkinsServer1a:
     Type: AWS::EC2::Instance
     Properties:
       SubnetId: !ImportValue myVPC-PublicSubnet01a
@@ -148,4 +144,10 @@ Resources:
         sudo systemctl enable jenkins.service
       Tags:
         - Key: Name
-          Value: JenkinsServer
+          Value: JenkinsServer1a
+
+Outputs:
+  JenkinsServerSg:
+    Value: !Ref JenkinsServerSg
+    Export:
+      Name: JenkinsServerSg
