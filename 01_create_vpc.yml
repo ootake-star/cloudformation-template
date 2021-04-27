@@ -1,12 +1,7 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: VPC and Subnet
-
 Resources: 
-
-#==========================================
 # VPCの作成
-#==========================================
-
   myVPC:
     Type: AWS::EC2::VPC
     Properties:
@@ -17,10 +12,7 @@ Resources:
         - Key: Name
           Value: myVPC
 
-#==========================================
 # インターネットゲートウェイの作成
-#==========================================
-
   InternetGateway:
     Type: AWS::EC2::InternetGateway
     Properties:
@@ -28,20 +20,14 @@ Resources:
         - Key: Name
           Value: myVPC-InternetGateway
 
-#==========================================
 # IGWをVPCにアタッチ
-#==========================================
-
   AttachGateway:
     Type: AWS::EC2::VPCGatewayAttachment
     Properties:
       VpcId: !Ref myVPC
       InternetGatewayId: !Ref InternetGateway
 
-#==========================================
 # パブリックサブネット用のルートテーブルを作成
-#==========================================
-
   FrontendRouteTable:
     Type: AWS::EC2::RouteTable
     DependsOn: AttachGateway
@@ -51,10 +37,7 @@ Resources:
         - Key: Name
           Value: myVPC-FrontendRoute
 
-#==========================================
 # IGWをデフォルトルートとしたルートを作成
-#==========================================
-
   FrontendRoute:
     Type: AWS::EC2::Route
     DependsOn: AttachGateway
@@ -63,10 +46,7 @@ Resources:
       DestinationCidrBlock: 0.0.0.0/0
       GatewayId: !Ref InternetGateway
 
-#==========================================
 # パブリックサブネットをap-northeast-1aに作成
-#==========================================
-
   PublicSubnet01a:
     Type: AWS::EC2::Subnet
     DependsOn: AttachGateway
@@ -79,20 +59,14 @@ Resources:
         - Key: Name
           Value: myVPC-PublicSubnet01a
 
-#==========================================
 # PublicSubnet01aとFrontendRouteを関連付け
-#==========================================
-
   FrontendSubnetRouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       SubnetId: !Ref PublicSubnet01a
       RouteTableId: !Ref FrontendRouteTable
 
-#===========================================
 # PrivateSubnet01aの作成
-#===========================================
-
   PrivateSubnet01a:
     Type: AWS::EC2::Subnet
     DependsOn: AttachGateway
@@ -104,10 +78,7 @@ Resources:
         - Key: Name
           Value: myVPC-PrivateSubnet01a
 
-#===========================================
 # PrivateSubnet01cの作成
-#===========================================
-
   PrivateSubnet01c:
     Type: AWS::EC2::Subnet
     DependsOn: AttachGateway
