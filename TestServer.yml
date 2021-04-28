@@ -17,7 +17,8 @@ Resources:
           IpProtocol: tcp
           FromPort: 22
           ToPort: 22
-          SourceSecurityGroupId: !ImportValue JenkinsServerSg
+          CidrIp: 0.0.0.0/0
+          # SourceSecurityGroupId: !ImportValue JenkinsServerSg
       Tags:
         - Key: Name
           Value: TestServerSg
