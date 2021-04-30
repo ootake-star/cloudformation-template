@@ -99,7 +99,7 @@ Resources:
           IpProtocol: tcp
           FromPort: 8080
           ToPort: 8080
-          CidrIp: !Ref MyIp
+          CidrIp: 0.0.0.0/0
       Tags:
         - Key: Name
           Value: JenkinsServerSg
