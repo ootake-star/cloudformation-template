@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: ---
+Description: Webhookテスト
 Parameters:
 #==========================================
 # EC2パラメータ
@@ -75,3 +75,10 @@ Resources:
       Tags:
         - Key: Name
           Value: WebServer
+
+
+  # TestServerEIP:
+  #   Type: "AWS::EC2::EIP"
+  #   Properties:
+  #     Domain: vpc
+  #   DependsOn: TestServer1a
