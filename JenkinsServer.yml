@@ -38,7 +38,7 @@ Resources:
               - 'sts:AssumeRole'
       Path: /
       Policies:
-        - PolicyName: EC2andCloudFormationFullAccess
+        - PolicyName: EC2,CloudFormation,SNS FullAccessPolicy
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
@@ -73,6 +73,10 @@ Resources:
 
               - Effect: Allow
                 Action: 'cloudformation:*'
+                Resource: '*'
+
+              - Effect: Allow
+                Action: 'sns:*'
                 Resource: '*'
 
 # IAMロール用のインスタンスプロファイルの作成
